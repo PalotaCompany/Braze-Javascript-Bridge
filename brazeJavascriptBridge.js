@@ -1,0 +1,124 @@
+/**
+ * Braze JavaScript Bridge for Flutter WebView
+ * 
+ * This bridge provides the same interface as the Braze Web SDK,
+ * but forwards all calls to the native Braze SDK through Flutter's WebView handler.
+ */
+class BrazeJavascriptBridge {
+    constructor() {
+        this.handlerName = 'brazeHandler';
+        this.initialized = false;
+
+        // Initialize the bridge
+        this.init();
+    }
+
+    /**
+     * Initialize the bridge
+     */
+    init() {
+        if (this.initialized) {
+            return;
+        }
+
+        // Check if we're in a Flutter WebView environment
+        if (typeof window !== 'undefined' && window.flutter_inappwebview) {
+            this.initialized = true;
+            console.log('Braze JavaScript Bridge initialized');
+        } else {
+            console.warn('Braze JavaScript Bridge: Flutter WebView not detected');
+        }
+    }
+
+    /**
+     * Send message to Flutter native layer
+     */
+    sendToNative(method, data) {
+        if (!this.initialized) {
+            console.error('Braze JavaScript Bridge: Not initialized');
+            return;
+        }
+
+        try {
+            const message = {
+                method: method,
+                data: data,
+                timestamp: Date.now()
+            };
+
+            // Send to Flutter WebView handler
+            if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+                window.flutter_inappwebview.callHandler(this.handlerName, message);
+            } else {
+                console.error('Braze JavaScript Bridge: Flutter handler not available');
+            }
+        } catch (error) {
+            console.error('Braze JavaScript Bridge: Error sending message', error);
+        }
+    }
+
+    /**
+     * Log a custom event
+     * @param {string} eventName - Name of the event
+     * @param {Object} properties - Event properties (optional)
+     */
+    logCustomEvent(eventName, properties = {}) {
+        if (!eventName || typeof eventName !== 'string') {
+            console.error('Braze JavaScript Bridge: Event name is required and must be a string');
+            return;
+        }
+
+        this.sendToNative('logCustomEvent', {
+            eventName: eventName,
+            properties: properties || {}
+        });
+    }
+
+    /**
+     * Log a purchase
+     * @param {string} productId - Product identifier
+     * @param {number} price - Price of the product
+     * @param {string} currency - Currency code (e.g., 'USD')
+     * @param {number} quantity - Quantity purchased (optional, defaults to 1)
+     * @param {Object} properties - Purchase properties (optional)
+     */
+    logPurchase(productId, price, currency, quantity = 1, properties = {}) {
+        if (!productId || typeof productId !== 'string') {
+            console.error('Braze JavaScript Bridge: Product ID is required and must be a string');
+            return;
+        }
+
+        if (typeof price !== 'number' || price < 0) {
+            console.error('Braze JavaScript Bridge: Price must be a positive number');
+            return;
+        }
+
+        if (!currency || typeof currency !== 'string') {
+            console.error('Braze JavaScript Bridge: Currency is required and must be a string');
+            return;
+        }
+
+        if (typeof quantity !== 'number' || quantity < 1) {
+            console.error('Braze JavaScript Bridge: Quantity must be a positive number');
+            return;
+        }
+
+        this.sendToNative('logPurchase', {
+            productId: productId,
+            price: price,
+            currency: currency.toUpperCase(),
+            quantity: quantity,
+            properties: properties || {}
+        });
+    }
+
+
+}
+
+// Create global braze instance
+window.braze = new BrazeJavascriptBridge();
+
+// Export for module systems
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = BrazeJavascriptBridge;
+}
