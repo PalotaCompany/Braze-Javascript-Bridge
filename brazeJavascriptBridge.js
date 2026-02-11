@@ -33,10 +33,11 @@ class BrazeJavascriptBridge {
     /**
      * Send message to Flutter native layer
      */
-    sendToNative(method, data) {
+    async sendToNative(method, data) {
+        var result = null;
         if (!this.initialized) {
-            console.error('Braze JavaScript Bridge: Not initialized');
-            return;
+            result = { "success": false, "message": "Braze JavaScript Bridge: Not initialized" };
+            return JSON.stringify(result);
         }
 
         try {
@@ -48,13 +49,14 @@ class BrazeJavascriptBridge {
 
             // Send to Flutter WebView handler
             if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
-                window.flutter_inappwebview.callHandler(this.handlerName, message);
+                result = await window.flutter_inappwebview.callHandler(this.handlerName, message);
             } else {
-                console.error('Braze JavaScript Bridge: Flutter handler not available');
+                result = { "success": false, "message": "Braze JavaScript Bridge: Flutter handler not available" };
             }
         } catch (error) {
-            console.error('Braze JavaScript Bridge: Error sending message', error);
+            result = { "success": false, "message": error.message || "Braze JavaScript Bridge: Unknown error" };
         }
+        return JSON.stringify(result);
     }
 
     /**
@@ -62,13 +64,13 @@ class BrazeJavascriptBridge {
      * @param {string} eventName - Name of the event
      * @param {Object} properties - Event properties (optional)
      */
-    logCustomEvent(eventName, properties = {}) {
+    async logCustomEvent(eventName, properties = {}) {
         if (!eventName || typeof eventName !== 'string') {
             console.error('Braze JavaScript Bridge: Event name is required and must be a string');
             return;
         }
 
-        this.sendToNative('logCustomEvent', {
+        return await this.sendToNative('logCustomEvent', {
             eventName: eventName,
             properties: properties || {}
         });
@@ -82,7 +84,7 @@ class BrazeJavascriptBridge {
      * @param {number} quantity - Quantity purchased (optional, defaults to 1)
      * @param {Object} properties - Purchase properties (optional)
      */
-    logPurchase(productId, price, currency, quantity = 1, properties = {}) {
+    async logPurchase(productId, price, currency, quantity = 1, properties = {}) {
         if (!productId || typeof productId !== 'string') {
             console.error('Braze JavaScript Bridge: Product ID is required and must be a string');
             return;
@@ -103,7 +105,7 @@ class BrazeJavascriptBridge {
             return;
         }
 
-        this.sendToNative('logPurchase', {
+        return await this.sendToNative('logPurchase', {
             productId: productId,
             price: price,
             currency: currency.toUpperCase(),
