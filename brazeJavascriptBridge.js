@@ -14,6 +14,19 @@ class BrazeJavascriptBridge {
     }
 
     /**
+     * The object the Flutter WebView plugin injects into the page.
+     * zikzak_inappwebview (a fork of flutter_inappwebview) injects
+     * `window.zikzak_inappwebview`; flutter_inappwebview injects
+     * `window.flutter_inappwebview`. Both expose the same `callHandler`.
+     */
+    nativeBridge() {
+        if (typeof window === 'undefined') {
+            return null;
+        }
+        return window.zikzak_inappwebview || window.flutter_inappwebview || null;
+    }
+
+    /**
      * Initialize the bridge
      */
     init() {
@@ -22,11 +35,16 @@ class BrazeJavascriptBridge {
         }
 
         // Check if we're in a Flutter WebView environment
-        if (typeof window !== 'undefined' && window.flutter_inappwebview) {
+        if (this.nativeBridge()) {
             this.initialized = true;
             console.log('Braze JavaScript Bridge initialized');
         } else {
             console.warn('Braze JavaScript Bridge: Flutter WebView not detected');
+            // Both plugins fire this once their bridge is ready; try again then
+            // instead of staying uninitialized for the life of the page.
+            if (typeof window !== 'undefined' && window.addEventListener) {
+                window.addEventListener('flutterInAppWebViewPlatformReady', () => this.init(), { once: true });
+            }
         }
     }
 
@@ -35,6 +53,7 @@ class BrazeJavascriptBridge {
      */
     async sendToNative(method, data) {
         var result = null;
+        this.init();
         if (!this.initialized) {
             result = { "success": false, "message": "Braze JavaScript Bridge: Not initialized" };
             return JSON.stringify(result);
@@ -48,8 +67,9 @@ class BrazeJavascriptBridge {
             };
 
             // Send to Flutter WebView handler
-            if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
-                result = await window.flutter_inappwebview.callHandler(this.handlerName, message);
+            const bridge = this.nativeBridge();
+            if (bridge && bridge.callHandler) {
+                result = await bridge.callHandler(this.handlerName, message);
             } else {
                 result = { "success": false, "message": "Braze JavaScript Bridge: Flutter handler not available" };
             }
