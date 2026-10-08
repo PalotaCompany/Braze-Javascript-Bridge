@@ -1,11 +1,14 @@
 /**
  * Braze JavaScript Bridge for Flutter WebView
- * 
+ * Version 1.1.0 — keep in step with BrazeJavascriptBridge.VERSION and the
+ * readme's changelog; a copy hosted elsewhere is identified by this number.
+ *
  * This bridge provides the same interface as the Braze Web SDK,
  * but forwards all calls to the native Braze SDK through Flutter's WebView handler.
  */
 class BrazeJavascriptBridge {
     constructor() {
+        this.version = BrazeJavascriptBridge.VERSION;
         this.handlerName = 'brazeHandler';
         this.initialized = false;
         // True once a platform-ready listener is registered, so repeated
@@ -40,9 +43,9 @@ class BrazeJavascriptBridge {
         // Check if we're in a Flutter WebView environment
         if (this.nativeBridge()) {
             this.initialized = true;
-            console.log('Braze JavaScript Bridge initialized');
+            console.log(`Braze JavaScript Bridge v${this.version} initialized`);
         } else if (!this.waitingForPlatform) {
-            console.warn('Braze JavaScript Bridge: Flutter WebView not detected');
+            console.warn(`Braze JavaScript Bridge v${this.version}: Flutter WebView not detected`);
             // Both plugins fire this once their bridge is ready; try again then
             // instead of staying uninitialized for the life of the page.
             if (typeof window !== 'undefined' && window.addEventListener) {
@@ -140,6 +143,10 @@ class BrazeJavascriptBridge {
 
 
 }
+
+// Assigned rather than declared as a static class field, so older WebViews
+// without class-field support still load the bridge.
+BrazeJavascriptBridge.VERSION = '1.1.0';
 
 // Create global braze instance
 window.braze = new BrazeJavascriptBridge();
