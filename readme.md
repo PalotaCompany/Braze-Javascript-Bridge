@@ -52,6 +52,11 @@ braze.logPurchase('product_123', 29.99, 'USD', 1, {
 
 ### 2. Flutter WebView Integration
 
+The bridge works with both `flutter_inappwebview` (which injects
+`window.flutter_inappwebview`) and its fork `zikzak_inappwebview` (which injects
+`window.zikzak_inappwebview`). If the page loads before the plugin has injected its
+object, the bridge initializes on the plugin's `flutterInAppWebViewPlatformReady` event.
+
 In your Flutter app, you'll need to handle the bridge messages:
 
 ```dart
