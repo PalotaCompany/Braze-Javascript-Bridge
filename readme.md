@@ -184,3 +184,14 @@ braze.logPurchase('test_product', 9.99, 'USD', 1);
 
 - Advanced features like in-app messages and push notifications require additional bridge methods
 - Real-time messaging features may need bi-directional communication
+
+## Changelog
+
+The version is in the header of `brazeJavascriptBridge.js`, in `BrazeJavascriptBridge.VERSION`
+(readable on a page as `window.braze.version`), and in the bridge's console messages.
+
+- **1.1.0** — Works with `zikzak_inappwebview` (`window.zikzak_inappwebview`) as well as
+  `flutter_inappwebview`; initializes on `flutterInAppWebViewPlatformReady` if loaded early,
+  registering that listener only once.
+- **1.0.0** — Descriptive results returned from `sendToNative`, `logCustomEvent` and `logPurchase`
+  (PR #1). Earlier copies carry no version number.
