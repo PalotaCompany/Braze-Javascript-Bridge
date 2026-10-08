@@ -8,6 +8,9 @@ class BrazeJavascriptBridge {
     constructor() {
         this.handlerName = 'brazeHandler';
         this.initialized = false;
+        // True once a platform-ready listener is registered, so repeated
+        // calls before the plugin loads add (and warn) only once.
+        this.waitingForPlatform = false;
 
         // Initialize the bridge
         this.init();
@@ -38,11 +41,12 @@ class BrazeJavascriptBridge {
         if (this.nativeBridge()) {
             this.initialized = true;
             console.log('Braze JavaScript Bridge initialized');
-        } else {
+        } else if (!this.waitingForPlatform) {
             console.warn('Braze JavaScript Bridge: Flutter WebView not detected');
             // Both plugins fire this once their bridge is ready; try again then
             // instead of staying uninitialized for the life of the page.
             if (typeof window !== 'undefined' && window.addEventListener) {
+                this.waitingForPlatform = true;
                 window.addEventListener('flutterInAppWebViewPlatformReady', () => this.init(), { once: true });
             }
         }
